@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Ayah Generator (Arabic)</title>
+    <link href="https://fonts.fontshare.com/css?family=lemon-milk" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-color: #000; /* Black background */
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px; /* Even spacing between elements */
+        }
+        h1, button, .surah-name, #ayah-message, label {
+            font-family: 'Lemon Milk', sans-serif; /* Apply Lemon Milk font to English text */
+        }
+        h1 {
+            font-size: 36px;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #ayah {
+            font-size: 36px; /* Larger font for the verse */
+            font-style: italic;
+            font-weight: bold; /* Make the ayah text bold */
+            max-width: 80%;
+            line-height: 1.6;
+        }
+        .surah-name {
+            font-size: 36px; /* Match the ayah font size */
+            font-style: normal;
+            font-weight: bold; /* Make the surah name bold too */
+            margin-top: 20px;
+        }
+        #ayah-message {
+            font-size: 20px;
+            font-weight: normal;
+        }
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .input-container select {
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+            background: #333;
+            color: #fff;
+        }
+        .input-container label {
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Random Ayah Generator</h1>
+    <div class="input-container">
+        <label for="startSurah">Start Surah:</label>
+        <select id="startSurah"></select>
+        <label for="endSurah">End Surah:</label>
+        <select id="endSurah"></select>
+    </div>
+    <button onclick="generateRandomAyah()">Generate Random Ayah</button>
+    <p id="ayah-message">Select your surah range above, then click the button to get a random Ayah.</p>
+    <p id="ayah"></p>
+
+    <script>
+        // Array of Arabic Surah names in order (1-indexed)
+        const arabicSurahs = [
+            "الفاتحة", "البقرة", "آل عمران", "النساء", "المائدة", "الأنعام", "الأعراف", "الأنفال", "التوبة",
+            "يونس", "هود", "يوسف", "الرعد", "إبراهيم", "الحجر", "النحل", "الإسراء", "الكهف", "مريم", "طه",
+            "الأنبياء", "الحج", "المؤمنون", "النور", "الفرقان", "الشعراء", "النمل", "القصص", "العنكبوت", "الروم",
+            "لقمان", "السجدة", "الأحزاب", "سبأ", "فاطر", "يس", "الصافات", "ص", "الزمر", "غافر",
+            "فصلت", "الشورى", "الزخرف", "الدخان", "الجاثية", "الأحقاف", "محمد", "الفتح", "الحجرات", "ق",
+            "الذاريات", "الطور", "النجم", "القمر", "الرحمن", "الواقعة", "الحديد", "المجادلة", "الحشر", "الممتحنة",
+            "الصف", "الجمعة", "المنافقون", "التغابن", "الطلاق", "التحريم", "الملك", "القلم", "الحاقة", "المعارج",
+            "نوح", "الجن", "المزمل", "المدثر", "القيامة", "الإنسان", "المرسلات", "النبأ", "النازعات", "عبس",
+            "التكوير", "الإنفطار", "المطففين", "الإنشقاق", "البروج", "الطارق", "الأعلى", "الغاشية", "الفجر", "البلد",
+            "الشمس", "الليل", "الضحى", "الشرح", "التين", "العلق", "القدر", "البينة", "الزلزلة", "العاديات",
+            "القارعة", "التكاثر", "العصر", "الهمزة", "الفيل", "قريش", "الماعون", "الكوثر", "الكافرون", "النصر",
+            "المسد", "الإخلاص", "الفلق", "الناس"
+        ];
+
+        const startSelect = document.getElementById("startSurah");
+        const endSelect = document.getElementById("endSurah");
+
+        // Populate the dropdowns with Arabic surah names
+        for (let i = 0; i < arabicSurahs.length; i++) {
+            const startOption = document.createElement("option");
+            startOption.value = i+1; // Surah number
+            startOption.textContent = arabicSurahs[i];
+            startSelect.appendChild(startOption);
+
+            const endOption = document.createElement("option");
+            endOption.value = i+1; 
+            endOption.textContent = arabicSurahs[i];
+            endSelect.appendChild(endOption);
+        }
+
+        // Set some default values (e.g., from Surah An-Nas(114) to Surah التحريم(66))
+        // We'll just choose a default range: Start = الناس (114), End = التحريم (66)
+        // The code will swap if needed.
+        startSelect.value = 114; // الناس
+        endSelect.value = 66;    // التحريم
+
+        async function generateRandomAyah() {
+            // Hide the instruction message
+            document.getElementById("ayah-message").style.display = "none";
+
+            let startSurah = parseInt(startSelect.value);
+            let endSurah = parseInt(endSelect.value);
+
+            // Ensure startSurah <= endSurah by swapping if necessary
+            if (startSurah > endSurah) {
+                [startSurah, endSurah] = [endSurah, startSurah];
+            }
+
+            // Pick a random surah in the user-defined range
+            const surahNumber = Math.floor(Math.random() * (endSurah - startSurah + 1)) + startSurah;
+
+            try {
+                // Fetch surah info
+                const surahInfoResponse = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`);
+                const surahInfoData = await surahInfoResponse.json();
+
+                if (surahInfoData.status !== "OK") {
+                    document.getElementById("ayah").innerText = "Could not retrieve surah information.";
+                    return;
+                }
+
+                const ayahCount = surahInfoData.data.numberOfAyahs;
+
+                // At least 3 ayahs are needed to avoid first and last
+                if (ayahCount <= 2) {
+                    document.getElementById("ayah").innerText = "This surah is too short to select a mid-range ayah.";
+                    return;
+                }
+
+                // Generate random ayah number excluding first and last
+                const randomAyahNumber = Math.floor(Math.random() * (ayahCount - 2)) + 2;
+
+                // Fetch the specific ayah
+                const ayahUrl = `https://api.alquran.cloud/v1/ayah/${surahNumber}:${randomAyahNumber}`;
+                const ayahResponse = await fetch(ayahUrl);
+                const ayahData = await ayahResponse.json();
+
+                if (ayahData.status === "OK") {
+                    let ayahText = ayahData.data.text;
+                    const surahName = ayahData.data.surah.name; // Arabic name returned by API
+
+                    // Exclude Bismillah if present
+                    if (ayahText.startsWith("بِسْمِ ٱللَّهِ")) {
+                        ayahText = ayahText.replace("بِسْمِ ٱللَّهِ ٱلرَّحْمَنِ ٱلرَّحِيمِ", "").trim();
+                    }
+
+                    // Display ayah and surah name
+                    document.getElementById("ayah").innerHTML = `"${ayahText}"`;
+                    document.getElementById("ayah").innerHTML += `<div class="surah-name">(${surahName})</div>`;
+                } else {
+                    document.getElementById("ayah").innerText = "Could not retrieve the ayah.";
+                }
+            } catch (error) {
+                document.getElementById("ayah").innerText = "Error fetching the ayah.";
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
